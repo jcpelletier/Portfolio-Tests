@@ -1,7 +1,15 @@
 import os
 import sys
 import time
-from playwright.sync_api import sync_playwright
+from urllib.parse import urlparse
+from playwright.sync_api import sync_playwright, Error as PlaywrightError
+
+def create_screenshot_filename(url: str) -> str:
+    parsed_url = urlparse(url)
+    domain = parsed_url.netloc.replace("www.", "").replace(".", "_")
+    path = parsed_url.path.strip("/").replace("/", "_") or "home"
+    timestamp = int(time.time())
+    return f"{domain}_{path}_{timestamp}.png"
 
 def test_page_loads(url: str):
     with sync_playwright() as p:
@@ -10,27 +18,57 @@ def test_page_loads(url: str):
         page = context.new_page()
 
         print(f"🔍 Navigating to {url}")
-        page.goto(url, timeout=15000)
+        screenshot_name = create_screenshot_filename(url)
 
-        # 🔄 Wait for visible content
         try:
-            page.wait_for_selector("body", timeout=5000)
-        except Exception:
-            print("❌ Page body did not load in time")
+            response = page.goto(url, timeout=15000)
+            if not response or response.status >= 400:
+                print(f"❌ Page returned HTTP {response.status if response else 'no response'}")
+                try:
+                    page.screenshot(path=screenshot_name, full_page=True)
+                    print(f"📷 Screenshot saved to '{screenshot_name}'")
+                except Exception as screenshot_error:
+                    print(f"⚠️ Could not capture screenshot: {screenshot_error}")
+                browser.close()
+                sys.exit(1)
+        except PlaywrightError as e:
+            print(f"❌ Navigation failed: {e}")
+            try:
+                page.screenshot(path=screenshot_name, full_page=True)
+                print(f"📷 Screenshot saved to '{screenshot_name}'")
+            except Exception as screenshot_error:
+                print(f"⚠️ Could not capture screenshot: {screenshot_error}")
             browser.close()
             sys.exit(1)
 
-        # ✅ Check title
-        title = page.title()
-        assert title.strip(), "Page title is empty"
+        try:
+            page.wait_for_selector("body", timeout=5000)
+        except PlaywrightError as e:
+            print(f"❌ Page body did not load: {e}")
+            try:
+                page.screenshot(path=screenshot_name, full_page=True)
+                print(f"📷 Screenshot saved to '{screenshot_name}'")
+            except Exception as screenshot_error:
+                print(f"⚠️ Could not capture screenshot: {screenshot_error}")
+            browser.close()
+            sys.exit(1)
 
-        # 🕓 Timestamped screenshot filename
-        timestamp = int(time.time())
-        screenshot_path = f"screenshot_{timestamp}.png"
-        page.screenshot(path=screenshot_path, full_page=True)
+        try:
+            title = page.title()
+            assert title.strip(), "Page title is empty"
+        except Exception as e:
+            print(f"❌ Title check failed: {e}")
+            try:
+                page.screenshot(path=screenshot_name, full_page=True)
+                print(f"📷 Screenshot saved to '{screenshot_name}'")
+            except Exception as screenshot_error:
+                print(f"⚠️ Could not capture screenshot: {screenshot_error}")
+            browser.close()
+            sys.exit(1)
 
+        page.screenshot(path=screenshot_name, full_page=True)
         print(f"✅ Page loaded. Title: {title}")
-        print(f"📷 Screenshot saved to '{screenshot_path}'")
+        print(f"📷 Screenshot saved to '{screenshot_name}'")
 
         browser.close()
 
