@@ -1,0 +1,37 @@
+name: Smoke Test
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # Every day at 12:00 UTC
+
+jobs:
+  run-smoketest:
+    runs-on: ubuntu-latest
+
+    env:
+      SMOKETEST_URL: "https://www.jpelletier.com"
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          python -m playwright install
+
+      - name: 🚀 Run smoke test from root
+        run: python Tests/test_page_loads.py
+
+      - name: 📤 Upload screenshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoketest-screenshots
+          path: screenshot_*.png
