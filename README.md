@@ -19,9 +19,3 @@ Verifies that a specific piece of text is present on the page. Set `SMOKETEST_UR
 SMOKETEST_URL="https://example.com" EXPECTED_TEXT="Hello World" \
     python Tests/test_text_presence.py
 ```
-
-
-## Additional test ideas
-- Verify that all images have an `alt` attribute to improve accessibility.
-- Crawl internal links and ensure none return an HTTP error status.
-- Check that a footer or navigation element is present on every page.
