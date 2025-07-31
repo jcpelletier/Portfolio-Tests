@@ -39,6 +39,12 @@ jobs:
         env:
           SMOKETEST_URL: "https://www.jpelletier.com/side-projects"
 
+      - name: 🧪 Confirm Home Page Contains Name
+        run: python Tests/test_text_presence.py
+        env:
+          SMOKETEST_URL: "https://www.jpelletier.com"
+          EXPECTED_TEXT: "Joel Pelletier"
+
       - name: 📤 Upload screenshot artifact
         if: always()
         uses: actions/upload-artifact@v4
