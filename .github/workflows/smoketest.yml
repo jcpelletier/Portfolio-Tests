@@ -8,15 +8,12 @@ on:
 jobs:
   run-smoketest:
     runs-on: ubuntu-latest
-
-    env:
-      SMOKETEST_URL: "https://www.jpelletier.com"
-
+    
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🐍 Set up Python
+      - name: 📦 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -27,8 +24,20 @@ jobs:
           pip install playwright
           python -m playwright install
 
-      - name: 🚀 Run smoke test from root
+      - name: 🧪 Confirm Home Page Loads
         run: python Tests/test_page_loads.py
+        env:
+          SMOKETEST_URL: "https://www.jpelletier.com"
+
+      - name: 🧪 Confirm Professional Projects Page Loads
+        run: python Tests/test_page_loads.py
+        env:
+          SMOKETEST_URL: "https://www.jpelletier.com/professional-projects"
+
+      - name: 🧪 Confirm Side Projects Page Loads
+        run: python Tests/test_page_loads.py
+        env:
+          SMOKETEST_URL: "https://www.jpelletier.com/side-projects"
 
       - name: 📤 Upload screenshot artifact
         if: always()
