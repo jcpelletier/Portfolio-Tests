@@ -21,7 +21,10 @@ def test_page_loads(url: str):
         screenshot_name = create_screenshot_filename(url)
 
         try:
-            response = page.goto(url, timeout=15000)
+            start_time = time.perf_counter()
+            response = page.goto(url, timeout=15000, wait_until="load")
+            page.wait_for_load_state("networkidle")
+            load_time = time.perf_counter() - start_time
             if not response or response.status >= 400:
                 print(f"❌ Page returned HTTP {response.status if response else 'no response'}")
                 try:
@@ -68,6 +71,7 @@ def test_page_loads(url: str):
 
         page.screenshot(path=screenshot_name, full_page=True)
         print(f"✅ Page loaded. Title: {title}")
+        print(f"⏱ Load time: {load_time:.2f} seconds")
         print(f"📷 Screenshot saved to '{screenshot_name}'")
 
         browser.close()
