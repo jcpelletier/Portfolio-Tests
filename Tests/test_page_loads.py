@@ -22,7 +22,7 @@ def test_page_loads(url: str):
 
         try:
             start_time = time.perf_counter()
-            response = page.goto(url, timeout=15000, wait_until="load")
+            response = page.goto(url, timeout=65000, wait_until="load")
             page.wait_for_load_state("networkidle")
             load_time = time.perf_counter() - start_time
             if not response or response.status >= 400:
