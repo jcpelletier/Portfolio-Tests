@@ -16,6 +16,7 @@ def test_page_loads(url: str):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
+        page.set_default_navigation_timeout(65000)
 
         print(f"🔍 Navigating to {url}")
         screenshot_name = create_screenshot_filename(url)
