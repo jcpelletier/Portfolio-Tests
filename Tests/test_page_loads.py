@@ -2,7 +2,11 @@ import os
 import sys
 import time
 from urllib.parse import urlparse
-from playwright.sync_api import sync_playwright, Error as PlaywrightError
+from playwright.sync_api import (
+    sync_playwright,
+    Error as PlaywrightError,
+    TimeoutError as PlaywrightTimeoutError,
+)
 
 def create_screenshot_filename(url: str) -> str:
     parsed_url = urlparse(url)
@@ -23,11 +27,31 @@ def test_page_loads(url: str):
 
         try:
             start_time = time.perf_counter()
-            response = page.goto(url, timeout=65000, wait_until="load")
-            page.wait_for_load_state("networkidle")
+            response = page.goto(url, timeout=65000, wait_until="commit")
+
+            max_wait = 65  # seconds
+            while True:
+                try:
+                    page.wait_for_load_state("networkidle", timeout=5000)
+                    break
+                except PlaywrightTimeoutError:
+                    elapsed = time.perf_counter() - start_time
+                    wait_name = screenshot_name.replace(
+                        ".png", f"_wait_{int(elapsed)}.png"
+                    )
+                    try:
+                        page.screenshot(path=wait_name, full_page=True)
+                        print(f"📷 Waiting... screenshot saved to '{wait_name}'")
+                    except Exception as screenshot_error:
+                        print(f"⚠️ Could not capture screenshot: {screenshot_error}")
+                    if elapsed >= max_wait:
+                        raise
+
             load_time = time.perf_counter() - start_time
             if not response or response.status >= 400:
-                print(f"❌ Page returned HTTP {response.status if response else 'no response'}")
+                print(
+                    f"❌ Page returned HTTP {response.status if response else 'no response'}"
+                )
                 try:
                     page.screenshot(path=screenshot_name, full_page=True)
                     print(f"📷 Screenshot saved to '{screenshot_name}'")
