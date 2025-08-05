@@ -8,18 +8,7 @@ from playwright.sync_api import (
     TimeoutError as PlaywrightTimeoutError,
 )
 
-
 def create_screenshot_filename(url: str, suffix: str | None = None) -> str:
-    """Build a timestamped screenshot filename for the given URL.
-
-    Args:
-        url: The page URL.
-        suffix: Optional suffix to append after the timestamp.
-
-    Returns:
-        A unique screenshot filename.
-    """
-
     parsed_url = urlparse(url)
     domain = parsed_url.netloc.replace("www.", "").replace(".", "_")
     path = parsed_url.path.strip("/").replace("/", "_") or "home"
@@ -40,31 +29,21 @@ def test_page_loads(url: str):
 
         try:
             start_time = time.perf_counter()
-            response = page.goto(url, timeout=65000, wait_until="commit")
+            response = page.goto(url, timeout=65000, wait_until="domcontentloaded")
 
-            max_wait = 65  # seconds
-            while True:
-                try:
-                    page.wait_for_load_state("networkidle", timeout=5000)
-                    break
-                except PlaywrightTimeoutError:
-                    elapsed = time.perf_counter() - start_time
-                    wait_name = create_screenshot_filename(
-                        url, f"wait_{int(elapsed)}"
-                    )
-                    try:
-                        page.screenshot(path=wait_name, full_page=True)
-                        print(f"📷 Waiting... screenshot saved to '{wait_name}'")
-                    except Exception as screenshot_error:
-                        print(f"⚠️ Could not capture screenshot: {screenshot_error}")
-                    if elapsed >= max_wait:
-                        raise
+            # Wait for specific content to appear
+            selector = os.getenv("TEST_SELECTOR", "h1")
+            try:
+                page.wait_for_selector(selector, timeout=30000)
+                print(f"✅ Selector '{selector}' detected, page likely rendered.")
+            except PlaywrightTimeoutError as e:
+                print(f"⚠️ Selector '{selector}' not found: {e}")
+                raise
 
             load_time = time.perf_counter() - start_time
+
             if not response or response.status >= 400:
-                print(
-                    f"❌ Page returned HTTP {response.status if response else 'no response'}"
-                )
+                print(f"❌ Page returned HTTP {response.status if response else 'no response'}")
                 screenshot_name = create_screenshot_filename(url)
                 try:
                     page.screenshot(path=screenshot_name, full_page=True)
@@ -111,7 +90,7 @@ def test_page_loads(url: str):
             browser.close()
             sys.exit(1)
 
-        screenshot_name = create_screenshot_filename(url)
+        screenshot_name = create_screenshot_filename(url, "final")
         page.screenshot(path=screenshot_name, full_page=True)
         print(f"✅ Page loaded. Title: {title}")
         print(f"⏱ Load time: {load_time:.2f} seconds")
@@ -121,10 +100,8 @@ def test_page_loads(url: str):
 
 if __name__ == "__main__":
     url = os.getenv("SMOKETEST_URL")
-
     if not url and len(sys.argv) > 1:
         url = sys.argv[1]
-
     if not url:
         print("❌ No URL provided. Set SMOKETEST_URL or pass as argument.")
         sys.exit(1)
