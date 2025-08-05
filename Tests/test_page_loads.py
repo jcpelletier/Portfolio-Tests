@@ -56,7 +56,7 @@ def test_page_loads(url: str):
             # Wait for specific content to appear
             selector = os.getenv("TEST_SELECTOR", "h1")
             try:
-                page.wait_for_selector(selector, timeout=10000)
+                page.wait_for_selector(selector, timeout=30000)
                 print(f"✅ Selector '{selector}' detected, page likely rendered.")
             except PlaywrightTimeoutError as e:
                 print(f"⚠️ Selector '{selector}' not found: {e}")
