@@ -38,7 +38,7 @@ jobs:
         run: python Tests/test_page_loads.py
         env:
           SMOKETEST_URL: "https://www.jpelletier.com/side-projects"
-          TEST_SELECTOR: "text=Disruptor Beam - Star Trek Timelines"
+          TEST_SELECTOR: "text=Programming"
 
       - name: 🧪 Confirm Home Page Contains Name
         run: python Tests/test_text_presence.py
