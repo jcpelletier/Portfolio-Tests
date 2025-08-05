@@ -30,28 +30,6 @@ def test_page_loads(url: str):
         try:
             start_time = time.perf_counter()
             response = page.goto(url, timeout=65000, wait_until="domcontentloaded")
-            time.sleep(2)
-
-            # Screenshot before scroll
-            pre_scroll_name = create_screenshot_filename(url, "pre_scroll")
-            page.screenshot(path=pre_scroll_name, full_page=True)
-            print(f"📷 Pre-scroll screenshot saved to '{pre_scroll_name}'")
-
-            # Scroll incrementally
-            scroll_steps = 4
-            for step in range(1, scroll_steps + 1):
-                scroll_position = f"document.body.scrollHeight * {step / scroll_steps}"
-                page.evaluate(f"window.scrollTo(0, {scroll_position})")
-                time.sleep(1)
-
-            # Final scroll to bottom
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            time.sleep(2)
-
-            # Screenshot after scroll
-            post_scroll_name = create_screenshot_filename(url, "post_scroll")
-            page.screenshot(path=post_scroll_name, full_page=True)
-            print(f"📷 Post-scroll screenshot saved to '{post_scroll_name}'")
 
             # Wait for specific content to appear
             selector = os.getenv("TEST_SELECTOR", "h1")
